@@ -26,7 +26,11 @@ def plot_graph(root: Value):
 
     for node in nodes:
         uid = str(id(node))
-        graph.node(name=uid, label=f"{node.label} | {node.data:.3f}", shape="record")
+        graph.node(
+            name=uid,
+            label=f"{{{node.label} | value: {node.data:.3f} | grad: {node.grad:.3f} }}",
+            shape="record",
+        )
         if node._op:
             graph.node(name=uid + node._op, label=node._op)
             graph.edge(uid + node._op, uid)
