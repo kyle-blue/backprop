@@ -9,7 +9,8 @@ readme = "README.md"
 requires-python = "3.12.9"
 dependencies = [
     "matplotlib (>=3.10.1,<4.0.0)",
-    "numpy (>=2.2.5,<3.0.0)"
+    "numpy (>=2.2.5,<3.0.0)",
+    "graphviz (>=0.20.3,<0.21.0)"
 ]
 
 [tool.poetry]
