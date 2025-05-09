@@ -13,6 +13,7 @@ def main():
     f = e * c + d
     f.label = "f"
 
+    f.backward()
     plot_graph(f)
 
 

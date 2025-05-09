@@ -15,8 +15,6 @@ def trace_graph(root: Value):
             build(child)
 
     build(root)
-    print(nodes)
-    print(edges)
 
     return nodes, edges
 

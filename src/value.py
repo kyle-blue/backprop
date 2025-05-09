@@ -1,7 +1,7 @@
 from enum import Enum
 import math
 from functools import reduce
-from typing import Set, Tuple, Union
+from typing import List, Set, Tuple, Union
 
 
 # For simplicity (so I don't have to repeat implementation), I have only defined necessary operations
@@ -62,6 +62,25 @@ class Value:
                 case Operation.EXP:
                     assert len(self._children) == 1
                     child.grad += self.data * self.grad
+
+
+
+    def get_children_ordered(self):
+        ordered_nodes: List["Value"] = [self]
+        children_queue: List["Value"]= [self]
+        while len(children_queue) != 0:
+            current = children_queue.pop(0)
+            ordered_nodes = [*ordered_nodes,  *current._children]
+            children_queue = [*children_queue,  *current._children]
+
+        print(ordered_nodes)
+        return ordered_nodes
+
+    def backward(self):
+        self.grad = 1.0
+        ordered_nodes = self.get_children_ordered()
+        for value in ordered_nodes:
+            value._backward()
 
 
     def relu(self):
