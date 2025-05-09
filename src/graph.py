@@ -19,7 +19,7 @@ def trace_graph(root: Value):
     return nodes, edges
 
 
-def plot_graph(root: Value):
+def plot_graph(root: Value, *, view=True):
     path = os.path.join(".", "graph", "graph")
     nodes, edges = trace_graph(root)
     graph = Digraph(format="png", graph_attr={"rankdir": "LR"})
@@ -40,4 +40,4 @@ def plot_graph(root: Value):
         cuid = str(id(child))
         graph.edge(cuid, puid + parent._op.value)
 
-    graph.render(path, view=True)
+    graph.render(path, view=view)

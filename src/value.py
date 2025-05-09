@@ -57,9 +57,19 @@ class Value:
                             power.data * base.data ** (power.data - 1) * self.grad
                         )
                     else:  # is_power
-                        child.grad += (
-                            math.log(base.data) * base.data**power
-                        ) * self.grad
+                        # Avoid complex numbers. Not really sure what to do for this case.
+                        # I guess for backprop, this part isn't really needed anyway, its just here for completeness
+                        # (a param isn't really ever a power)
+                        if base.data == 0:
+                            child.grad = 0
+                        elif base.data < 0:
+                            child.grad += (
+                                -math.log(abs(base.data)) * base.data**power.data
+                            ) * self.grad
+                        else:
+                            child.grad += (
+                                math.log(base.data) * base.data**power.data
+                            ) * self.grad
 
                 case Operation.RELU:
                     assert len(self._children) == 1
@@ -106,7 +116,7 @@ class Value:
         )
 
     def __repr__(self):
-        return f"Value(data={self.data}, label={self.label})"
+        return f"Value(data={self.data}, grad={self.grad})"
 
     def __add__(self, other: accepted_types):
         if not isinstance(other, Value):
