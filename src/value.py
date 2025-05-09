@@ -13,14 +13,20 @@ class Operation(Enum):
     POW = "**"
     MUL = "*"
     RELU = "relu"
-    EXP = 'exp'
+    EXP = "exp"
 
 
 accepted_types = Union["Value", int, float]
 
 
 class Value:
-    def __init__(self, data: float, label="", _children: Tuple["Value", ...]=(), _op=Operation.NONE):
+    def __init__(
+        self,
+        data: float,
+        label="",
+        _children: Tuple["Value", ...] = (),
+        _op=Operation.NONE,
+    ):
         self.data = data
         self.label = label
         self._children = _children
@@ -47,9 +53,13 @@ class Value:
                     base = self._children[0]
                     power = self._children[1]
                     if child == base:
-                        child.grad += power.data * base.data**(power.data - 1) * self.grad
-                    else: # is_power
-                        child.grad += (math.log(base.data) * base.data ** power) * self.grad
+                        child.grad += (
+                            power.data * base.data ** (power.data - 1) * self.grad
+                        )
+                    else:  # is_power
+                        child.grad += (
+                            math.log(base.data) * base.data**power
+                        ) * self.grad
 
                 case Operation.RELU:
                     assert len(self._children) == 1
@@ -57,21 +67,19 @@ class Value:
 
                 case Operation.TANH:
                     assert len(self._children) == 1
-                    child.grad += ( 1 - self.data ** 2 ) * self.grad
+                    child.grad += (1 - self.data**2) * self.grad
 
                 case Operation.EXP:
                     assert len(self._children) == 1
                     child.grad += self.data * self.grad
 
-
-
     def get_children_ordered(self):
         ordered_nodes: List["Value"] = [self]
-        children_queue: List["Value"]= [self]
+        children_queue: List["Value"] = [self]
         while len(children_queue) != 0:
             current = children_queue.pop(0)
-            ordered_nodes = [*ordered_nodes,  *current._children]
-            children_queue = [*children_queue,  *current._children]
+            ordered_nodes = [*ordered_nodes, *current._children]
+            children_queue = [*children_queue, *current._children]
 
         return ordered_nodes
 
@@ -81,13 +89,21 @@ class Value:
         for value in ordered_nodes:
             value._backward()
 
-
     def relu(self):
         out = self.data
-        if (out <= 0):
+        if out <= 0:
             out = 0
-        return Value(out, _children=(self,), label=f"relu({self.label})", _op = Operation.RELU)
+        return Value(
+            out, _children=(self,), label=f"relu({self.label})", _op=Operation.RELU
+        )
 
+    def tanh(self):
+        return Value(
+            math.tanh(self.data),
+            _children=(self,),
+            label=f"tanh({self.label})",
+            _op=Operation.TANH,
+        )
 
     def __repr__(self):
         return f"Value(data={self.data}, label={self.label})"
