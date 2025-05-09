@@ -1,6 +1,7 @@
 from enum import Enum
+import math
 from functools import reduce
-from typing import Set
+from typing import Set, Tuple, Union
 
 
 # For simplicity (so I don't have to repeat implementation), I have only defined necessary operations
@@ -9,47 +10,114 @@ class Operation(Enum):
     NONE = ""
     ADD = "+"
     TANH = "tanh"
-    EXP = "**"
+    POW = "**"
     MUL = "*"
+    RELU = "relu"
+    EXP = 'exp'
+
+
+accepted_types = Union["Value", int, float]
 
 
 class Value:
-    def __init__(self, data: float, label="", _children=(), _op=Operation.NONE):
+    def __init__(self, data: float, label="", _children: Tuple["Value", ...]=(), _op=Operation.NONE):
         self.data = data
         self.label = label
-        self._children: Set[Value] = set(_children)
+        self._children = _children
         self._op = _op
         self.grad = 0.0
+
+    # Calculate the gradients of children with respect to this Value
+    # Child grads must accumulate, as a single node can (and most likely will) be used more than once
+    def _backward(self):
+        for i, child in enumerate(self._children):
+            match self._op:
+                case Operation.ADD:
+                    child.grad += self.grad
+
+                case Operation.MUL:
+                    others = [x.data for x in self._children]
+                    others.pop(i)
+                    others_product = reduce(lambda x, y: x * y, others)
+                    child.grad += self.grad * others_product
+
+                case Operation.POW:
+                    # Only allowed two operands in this instance
+                    assert len(self._children) == 2
+                    base = self._children[0]
+                    power = self._children[1]
+                    if child == base:
+                        child.grad += power.data * base.data**(power.data - 1) * self.grad
+                    else: # is_power
+                        child.grad += (math.log(base.data) * base.data ** power) * self.grad
+
+                case Operation.RELU:
+                    assert len(self._children) == 1
+                    child.grad += self.grad if self.data > 0 else 0
+
+                case Operation.TANH:
+                    assert len(self._children) == 1
+                    child.grad += ( 1 - self.data ** 2 ) * self.grad
+
+                case Operation.EXP:
+                    assert len(self._children) == 1
+                    child.grad += self.data * self.grad
+
+
+    def relu(self):
+        out = self.data
+        if (out <= 0):
+            out = 0
+        return Value(out, _children=(self,), label=f"relu({self.label})", _op = Operation.RELU)
+
 
     def __repr__(self):
         return f"Value(data={self.data}, label={self.label})"
 
-    def __add__(self, other: "Value"):
+    def __add__(self, other: accepted_types):
+        if not isinstance(other, Value):
+            other = Value(other)
         value = Value(
             self.data + other.data, _children=(self, other), _op=Operation.ADD
         )
         return value
 
-    def __mul__(self, other: "Value"):
+    def __mul__(self, other: accepted_types):
+        if not isinstance(other, Value):
+            other = Value(other)
         value = Value(
             self.data * other.data, _children=(self, other), _op=Operation.MUL
         )
         return value
 
-    # Calculate the gradients of children with respect to this Value
-    def _backward(self):
-        for child in self._children:
-            match self._op:
-                case Operation.ADD:
-                    child.grad = self.grad
+    def __pow__(self, other: accepted_types):
+        if not isinstance(other, Value):
+            other = Value(other)
+        value = Value(self.data**other.data, _children=(self, other), _op=Operation.POW)
+        return value
 
-                case Operation.MUL:
-                    others = self._children - set([child])
-                    others_data = map(lambda x: x.data, others)
-                    child.grad = self.grad * reduce(lambda x, y: x * y, others_data)
+    def __truediv__(self, other: accepted_types):
+        return self * other**-1
 
-                case Operation.TANH:
-                    pass
+    def __neg__(self):
+        return self * -1
 
-                case Operation.EXP:
-                    pass
+    def __sub__(self, other: accepted_types):
+        return self + (-other)
+
+    def __radd__(self, other: accepted_types):
+        return self + other
+
+    def __rsub__(self, other: accepted_types):
+        return (-self) + other
+
+    def __rmul__(self, other: accepted_types):
+        return self * other
+
+    def __rpow__(self, other: accepted_types):
+        if not isinstance(other, Value):
+            other = Value(other)
+        return other**self
+
+    def __rtruediv__(self, other: accepted_types):
+        return self**-1 * other

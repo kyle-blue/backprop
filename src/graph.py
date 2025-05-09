@@ -1,7 +1,7 @@
 import os
 from typing import Set, Tuple
 from graphviz import Digraph
-from value import Value
+from value import Operation, Value
 
 
 def trace_graph(root: Value):
@@ -15,6 +15,8 @@ def trace_graph(root: Value):
             build(child)
 
     build(root)
+    print(nodes)
+    print(edges)
 
     return nodes, edges
 
@@ -31,13 +33,13 @@ def plot_graph(root: Value):
             label=f"{{{node.label} | value: {node.data:.3f} | grad: {node.grad:.3f} }}",
             shape="record",
         )
-        if node._op:
-            graph.node(name=uid + node._op, label=node._op)
-            graph.edge(uid + node._op, uid)
+        if node._op and node._op is not Operation.NONE:
+            graph.node(name=uid + node._op.value, label=node._op.value)
+            graph.edge(uid + node._op.value, uid)
 
     for parent, child in edges:
         puid = str(id(parent))
         cuid = str(id(child))
-        graph.edge(cuid, puid + parent._op)
+        graph.edge(cuid, puid + parent._op.value)
 
     graph.render(path, view=True)
