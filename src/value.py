@@ -73,7 +73,6 @@ class Value:
             ordered_nodes = [*ordered_nodes,  *current._children]
             children_queue = [*children_queue,  *current._children]
 
-        print(ordered_nodes)
         return ordered_nodes
 
     def backward(self):
