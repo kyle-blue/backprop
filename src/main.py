@@ -71,7 +71,7 @@ def main():
             param.data -= learning_rate * param.grad
 
     print(f"Final guesses: {[p.data for p in preds]}")
-    plot_graph(loss, view=False)
+    plot_graph(loss, view=True)
 
 
 if __name__ == "__main__":
